@@ -81,7 +81,9 @@ for i in range(0, len(frequency)):
         dotRate[i].append((dot(shift(frequency[i], j), rate), j))
 
 for item in dotRate:
-    sd.append(sorted(item))
+    inValue = sorted(item)
+    inValue.reverse()
+    sd.append(inValue)
 
 for item in sd:
     print(chr(item[0][1]+a))
