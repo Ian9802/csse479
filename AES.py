@@ -1,6 +1,3 @@
-print("run count")
-count = int(input())
-
 sBox = [
     [ 99,124,119,123,242,107,111,197, 48,  1,103, 43,254,215,171,118],
     [202,130,201,125,250, 89, 71,240,173,212,162,175,156,164,114,192],
@@ -31,23 +28,55 @@ cdKey = [
     [3, 1, 1, 2]
 ]
 
+
 def main():
-    1+1
-    #do things
+    key, data = readDoc()
+    #count = int(input("Input the run count:"))
+    count = 1
+    for i in range(0, count):
+        data = execution(key[0], data)
+    writeDoc(data)
 
 
-def stringToBin(string):
-    binString = list()
-    for x in range(0, 16):
-        binString.append('{0:08b}'.format(ord(string[x])))
-    return binString
+def execution(key, data):
+    outData = list()
+    for row in data:
+        base = convert(start(row))
+        keyBox = convert(start(key))
+        aBox = ark(base, keyBox)
+        for x in range(0, 9):
+            bBox = bs(aBox)
+            cBox = sr(bBox)
+            dBox = mc(cBox)
+            keyBox = nkb(keyBox, x+1)
+            aBox = ark(dBox, keyBox)
+        bBox = bs(aBox)
+        cBox = sr(bBox)
+        keyBox = nkb(keyBox, 10)
+        aBox = ark(cBox, keyBox)
+        outData.append(aBox)
+    return outData
+
+
+def convert(inValue):
+    outValue = [[] for foo in range(0, 4)]
+    for x in range(0, 4):
+        for y in range(0, 4):
+            outValue[x].append(int(inValue[x][y], 2))
+    return outValue
+
+# def stringToBin(string):
+#     binString = list()
+#     for x in range(0, 16):
+#         binString.append('{0:08b}'.format(ord(string[x])))
+#     return binString
 
 
 def start(binString):
     aBox = [[] for foo in range(0, 4)]
     for x in range(0, 4):
         for y in range(0, 4):
-            aBox[x].append(binString[4*x+y:4*x+y+8])
+            aBox[y % 4].append(binString[(32*x)+(8*y):(32*x)+(8*y)+8])
     return aBox
 
 
@@ -60,9 +89,12 @@ def bs(aBox):
 
 
 def indBS(b):
-    row = b[:4]
-    col = b[4:]
-    return sBox[int(row, 2)][int(col, 2)]
+    val = '{0:08b}'.format(b)
+    row = val[:4]
+    col = val[4:]
+    decRow = int(row, 2)
+    decCol = int(col, 2)
+    return sBox[decRow][decCol]
 
 
 def sr(bBox):
@@ -76,11 +108,35 @@ def sr(bBox):
 def mc(cBox):
     dBox = [[] for foo in range(0, 4)]
     for x in range(0, 4):
-        for y in range(0, 4):
-            val = cdKey[x][y] * cBox[x][y]
-            dBox[x].append(val)
+        dBox[x].extend(mux(cBox[x]))
     return dBox
 
+
+def mux(col):
+    column = list()
+    for x in range(0, 4):
+        value = 0
+        for y in range(0, 4):
+            #might be how this works?
+            value = value ^ (finiteMult(cdKey[x][y], col[y]))
+        column.append(value)
+    return column
+
+def finiteMult(a, b):
+    aString = '{0:08b}'.format(a)
+    bString = '{0:08b}'.format(b)
+    p = 0
+    for x in range(0, 8):
+        if(bString[-1] == '1'):
+            p = p ^ a
+        b = b >> 1
+        carry = (aString[0] == '1')
+        a = (a << 1)%256
+        if(carry):
+            a = a ^ 27
+        aString = '{0:08b}'.format(a)
+        bString = '{0:08b}'.format(b)
+    return p
 
 def ark(dBox, keyBox):
     eBox = [[] for foo in range(0, 4)]
@@ -91,30 +147,60 @@ def ark(dBox, keyBox):
     return eBox
 
 
-def nkb(oldKeyBox):
+def nkb(oldKeyBox, i):
     keyBox = [[] for foo in range(0, 4)]
-    for y in range(0, 4):
-        val = dBox[x][y] ^ keyBox[x][y]
-        eBox[x].append(val)
     for x in range(0, 4):
-        for y in range(0, 4):
-            val = dBox[x][y] ^ keyBox[x][y]
-            eBox[x].append(val)
+        if x % 4 == 0:
+            keyBox[x].extend(wFun(oldKeyBox[x], tFun(oldKeyBox[3], (i+1)*4)))
+        else:
+            keyBox[x].extend(wFun(oldKeyBox[x], keyBox[(x-1)]))
+    return keyBox
 
 
-def tfun(oldColumn):
+def wFun(col1, col2):
     column = list()
+    for x in range(0, 4):
+        column.append(col1[x] ^ col2[x])
+    return column
 
 
+def tFun(oldColumn, i):
+    tempColumn = list()
+    returnColumn = list()
+    for x in range(0, 4):
+        tempColumn.append(indBS(oldColumn[(x+1) % 4]))
+    c = roundC(i)
+    returnColumn.append(c ^ tempColumn[0])
+    for x in range(1, 4):
+        returnColumn.append(tempColumn[x])
+    return returnColumn
 
 
+def roundC(val):
+    out = 1
+    for x in range(0, (val-4)//4):
+        out = finiteMult(out, 2)
+    return out
 
 
+def readDoc():
+    file = open("aesinput.txt", 'r')
+    data = list()
+    for line in file:
+        data.append(line.rstrip('\n'))
+    file.close()
+    return data[:1], data[1:]
 
 
-
-
-
+def writeDoc(data):
+    file = open("aesianhallamout.txt", 'w')
+    for message in data:
+        for row in message:
+            for value in row:
+                binString = '{0:08b}'.format(value)
+                file.write(binString)
+        file.write('\n')
+    file.close()
 
 if __name__ == '__main__':
     main()
