@@ -10,9 +10,7 @@ def finiteMult(a, b):
         carry = (aString[0] == '1')
         a = (a << 1)%256
         if(carry):
-            print(a)
             a = a ^ 27
-            print(a)
         aString = '{0:08b}'.format(a)
         bString = '{0:08b}'.format(b)
     return p

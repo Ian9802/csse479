@@ -50,20 +50,21 @@ def finiteMult(a, b):
         carry = (aString[0] == '1')
         a = (a << 1)%256
         if(carry):
-            print(a)
             a = a ^ 27
-            print(a)
         aString = '{0:08b}'.format(a)
         bString = '{0:08b}'.format(b)
     return p
 
 def nkb(oldKeyBox, i):
+    print(oldKeyBox)
+    print(i)
     keyBox = [[] for foo in range(0, 4)]
     for x in range(0, 4):
         if x % 4 == 0:
             keyBox[x].extend(wFun(oldKeyBox[x], tFun(oldKeyBox[3], (i+1)*4)))
         else:
             keyBox[x].extend(wFun(oldKeyBox[x], keyBox[(x-1)]))
+    print(keyBox)
     return keyBox
 
 
@@ -92,9 +93,23 @@ def roundC(val):
     return out
 
 
-
+def hexBox(matrix):
+    box = [[] for foo in range(0, 4)]
+    for x in range(0, 4):
+        for y in range(0, 4):
+            box[x].append(hex(matrix[x][y]))
+    return box
 
 val = convert(key)
 for i in range(0, 10):
     val = nkb(val, i)
-    print(val)
+    print(hexBox(val))
+
+def transpose(matrix):
+    box = [[] for foo in range(0, 4)]
+    for x in range(0, 4):
+        for y in range(0, 4):
+            box[y % 4].append(matrix[x][y])
+    return box
+
+

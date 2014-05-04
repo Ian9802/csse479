@@ -31,31 +31,55 @@ cdKey = [
 
 def main():
     key, data = readDoc()
-    #count = int(input("Input the run count:"))
-    count = 1
+    count = int(input("Input the run count:"))
     for i in range(0, count):
-        data = execution(key[0], data)
+        tempdata = execution(key[0], data)
+        data = outData(tempdata)
     writeDoc(data)
+
+
+def outData(data):
+    outValue = list()
+    for message in data:
+        outString = ""
+        for row in message:
+            for value in row:
+                outString += '{0:08b}'.format(value)
+        outValue.append(outString)
+    return outValue
 
 
 def execution(key, data):
     outData = list()
     for row in data:
         base = convert(start(row))
-        keyBox = convert(start(key))
-        aBox = ark(base, keyBox)
+        keyBox = convert(keystart(key))
+        tKey = transpose(keyBox)
+        #0
+        aBox = ark(base, tKey)
         for x in range(0, 9):
             bBox = bs(aBox)
             cBox = sr(bBox)
             dBox = mc(cBox)
-            keyBox = nkb(keyBox, x+1)
-            aBox = ark(dBox, keyBox)
+            keyBox = nkb(keyBox, x)
+            tKey = transpose(keyBox)
+            aBox = ark(dBox, tKey)
+        #10
         bBox = bs(aBox)
         cBox = sr(bBox)
-        keyBox = nkb(keyBox, 10)
-        aBox = ark(cBox, keyBox)
-        outData.append(aBox)
+        keyBox = nkb(keyBox, 9)
+        tKey = transpose(keyBox)
+        aBox = ark(cBox, tKey)
+        outData.append(transpose(aBox))
     return outData
+
+
+def hexBox(matrix):
+    box = [[] for foo in range(0, 4)]
+    for x in range(0, 4):
+        for y in range(0, 4):
+            box[x].append(hex(matrix[x][y]))
+    return box
 
 
 def convert(inValue):
@@ -78,6 +102,14 @@ def start(binString):
         for y in range(0, 4):
             aBox[y % 4].append(binString[(32*x)+(8*y):(32*x)+(8*y)+8])
     return aBox
+
+
+def keystart(binString):
+    keyBox = [[] for foo in range(0, 4)]
+    for x in range(0, 4):
+        for y in range(0, 4):
+            keyBox[x].append(binString[(32*x)+(8*y):(32*x)+(8*y)+8])
+    return keyBox
 
 
 def bs(aBox):
@@ -107,9 +139,10 @@ def sr(bBox):
 
 def mc(cBox):
     dBox = [[] for foo in range(0, 4)]
+    tcBox = transpose(cBox)
     for x in range(0, 4):
-        dBox[x].extend(mux(cBox[x]))
-    return dBox
+        dBox[x].extend(mux(tcBox[x]))
+    return transpose(dBox)
 
 
 def mux(col):
@@ -131,12 +164,19 @@ def finiteMult(a, b):
             p = p ^ a
         b = b >> 1
         carry = (aString[0] == '1')
-        a = (a << 1)%256
+        a = (a << 1) % 256
         if(carry):
             a = a ^ 27
         aString = '{0:08b}'.format(a)
         bString = '{0:08b}'.format(b)
     return p
+
+def transpose(matrix):
+    box = [[] for foo in range(0, 4)]
+    for x in range(0, 4):
+        for y in range(0, 4):
+            box[y % 4].append(matrix[x][y])
+    return box
 
 def ark(dBox, keyBox):
     eBox = [[] for foo in range(0, 4)]
@@ -195,12 +235,10 @@ def readDoc():
 def writeDoc(data):
     file = open("aesianhallamout.txt", 'w')
     for message in data:
-        for row in message:
-            for value in row:
-                binString = '{0:08b}'.format(value)
-                file.write(binString)
+        file.write(message)
         file.write('\n')
     file.close()
+
 
 if __name__ == '__main__':
     main()
