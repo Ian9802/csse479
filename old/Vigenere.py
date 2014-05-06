@@ -1,4 +1,3 @@
-import math
 print("Vigenere Cipher")
 #dot
 def dot(list1, list2):
